@@ -18,7 +18,7 @@ kafka:
     - zookeeper
   environment:
     KAFKA_LOG_CLEANUP_POLICY:
-    KAFKA_ADVERTISED_HOST_NAME:
+    KAFKA_ADVERTISED_HOST_NAME: 
     KAFKA_AUTO_CREATE_TOPICS_ENABLE:
   ports:
     - '9092:9092'
@@ -29,7 +29,7 @@ schema-registry:
     - zookeeper
     - kafka
   ports:
-    - '48081:8081'
+    - '8081:8081'
   environment:
     SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL: none
 postgres:
@@ -37,7 +37,9 @@ postgres:
   dockerfile: Dockerfile.postgres
   hostname: postgres
   ports:
-    - '45432:5432'
+    - '5432:5432'
+  environment:
+    POSTGRES_PORT_5432_TCP_PORT: 5432
 bottledwater-json:
   build: ./tmp
   dockerfile: Dockerfile.client
@@ -59,17 +61,23 @@ psql:
   image: postgres:9.5
   links:
     - postgres
-  command: 'sh -c ''exec psql -h "$POSTGRES_PORT_5432_TCP_ADDR" -p "$POSTGRES_PORT_5432_TCP_PORT" -U postgres'''
+  command: 'sh -c ''exec psql -h postgres -p 5432 -U postgres'''
+topiclist:
+  image: confluent/tools
+  links:
+    - zookeeper
+    - kafka
+  entrypoint: ['/usr/bin/kafka-topics']
 kafka-avro-console-consumer:
   image: confluent/tools
   links:
     - zookeeper
     - kafka
     - schema-registry
-  entrypoint: ['/confluent-tools.sh', 'kafka-avro-console-consumer']
+  entrypoint: ['/usr/bin/kafka-avro-console-consumer', '--zookeeper', zookeeper]
 kafka-tools:
   image: confluent/tools
   links:
     - zookeeper
     - kafka
-  entrypoint: /confluent-tools.sh
+  entrypoint: /usr/bin/confluent-tools
